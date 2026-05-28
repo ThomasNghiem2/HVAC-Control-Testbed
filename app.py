@@ -29,25 +29,30 @@ timestamp = []
 sensor_data = {sid: {"co2": [], "temp": []} for sid in SENSOR_IDS}
 latest_sensor_values = {sid: {"co2": None, "temp": None} for sid in SENSOR_IDS}
 
+test_running = False
+current_airflow = None
+
 system_state = {
     "inlet_fan": 0,
     "outlet_fan": 0,
     "inlet_vent": 0,
-    "outlet_vent": 0
+    "outlet_vent": 0,
+    "co2": 0
 }
 
 # ------------------------------
 # CSV SETUP
 # ------------------------------
-CSV_FILE = f"data/sensor_log_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+'''CSV_FILE = f"data/sensor_log_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
 
 with open(CSV_FILE, "w", newline="") as f:
     writer = csv.writer(f)
-    headers = ["timestamp","inlet_fan","outlet_fan","inlet_vent","outlet_vent"]
+    headers = ["timestamp","co2_state","inlet_fan","outlet_fan","inlet_vent","outlet_vent"]
     for sid in SENSOR_IDS:
         headers += [f"{sid}_co2", f"{sid}_temp"]
     writer.writerow(headers)
-
+'''
+CSV_FILE = None
 
 # ------------------------------
 # WEB UI 
@@ -180,6 +185,30 @@ max-height:300px;
 
 </div>
 
+<div class="card">
+<h3>CO₂ Valve</h3>
+
+<button onclick="setCO2(1)">ON</button>
+<button onclick="setCO2(0)">OFF</button>
+
+<p id="co2Status">Status: OFF</p>
+</div>
+
+<div class="card">
+
+<h3>Test Control</h3>
+
+<div class="slider-container">
+<input type="number" id="airflowValue" step="0.1" placeholder="Enter airflow rate">
+<span class="value">CFM</span>
+</div>
+
+<button onclick="startTest()">Start Test</button>
+<button onclick="stopTest()">Stop Test</button>
+
+<p id="testStatus">Test: STOPPED</p>
+
+</div>
 
 <div class="chart-card">
 
@@ -242,6 +271,19 @@ method:"POST",
 headers:{"Content-Type":"application/json"},
 body:JSON.stringify({vent:vent,angle:Number(angle)})
 })
+
+}
+
+function setCO2(state){
+
+fetch("/co2",{
+method:"POST",
+headers:{"Content-Type":"application/json"},
+body:JSON.stringify({state:state})
+})
+
+document.getElementById("co2Status").textContent =
+"Status: " + (state ? "ON" : "OFF")
 
 }
 
@@ -320,6 +362,46 @@ function updateGraphs() {
 
 setInterval(updateGraphs,1000)
 
+function startTest(){
+
+    const airflow = Number(document.getElementById("airflowValue").value)
+
+    if(!airflow){
+        alert("Enter airflow value first")
+        return
+    }
+
+    co2Chart.data.labels = []
+    tempChart.data.labels = []
+
+    co2Chart.data.datasets.forEach(d => d.data = [])
+    tempChart.data.datasets.forEach(d => d.data = [])
+
+    co2Chart.update()
+    tempChart.update()
+
+    fetch("/start_test",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({airflow:airflow})
+    })
+
+    document.getElementById("testStatus").textContent =
+    "Test: RUNNING"
+}
+
+function stopTest(){
+
+    fetch("/stop_test",{
+        method:"POST"
+    })
+
+    document.getElementById("testStatus").textContent =
+    "Test: STOPPED"
+
+    document.getElementById("airflowValue").value=""
+}
+
 </script>
 
 </body>
@@ -332,17 +414,17 @@ setInterval(updateGraphs,1000)
 # ------------------------------
 # BLUETOOTH PORTS
 # ------------------------------
-
 FAN_PORT = "COM5"
 VENT_PORT = "COM7"
+CO2_PORT = "COM8"
 
 bt_fan = None
 bt_vent = None
+bt_co2 = None
 
 # ------------------------------
 # FAN CONTROL
 # ------------------------------
-
 @app.route("/fan", methods=["POST"])
 def set_fan():
     global bt_fan
@@ -367,7 +449,6 @@ def set_fan():
 # ------------------------------
 # VENT CONTROL
 # ------------------------------
-
 @app.route("/vent", methods=["POST"])
 def set_vent():
     global bt_vent
@@ -388,16 +469,39 @@ def set_vent():
         bt_vent.write(msg.encode())
     return jsonify(status="ok")
 
+# ------------------------------
+# CO2 CONTROL
+# ------------------------------
+@app.route("/co2", methods=["POST"])
+def set_co2():
+    global bt_co2
+    data = request.get_json(force=True, silent=True) or {}
+    state = int(data.get("state", 0))
+    state = 1 if state else 0
+
+    cmd = {"co2": state}
+    msg = json.dumps(cmd) + "\n"
+
+    system_state["co2"] = state
+
+    if bt_co2:
+        bt_co2.write(msg.encode())
+    return jsonify(status="ok")
+
 
 # ------------------------------
 # BACKGROUND TIMESTAMP THREAD AND CSV WRITER
 # ------------------------------
 def timestamp_updater():
     while True:
+        if not test_running:
+            time.sleep(TIMESTAMP_INTERVAL)
+            continue
+
         now = datetime.now().strftime("%H:%M:%S")
         timestamp.append(now)
 
-        row = [now,system_state["inlet_fan"],system_state["outlet_fan"],
+        row = [now,system_state["co2"],system_state["inlet_fan"],system_state["outlet_fan"],
                system_state["inlet_vent"],system_state["outlet_vent"]]
 
         for sid in SENSOR_IDS:
@@ -418,9 +522,10 @@ def timestamp_updater():
             timestamp.pop(0)
 
         # Append to CSV
-        with open(CSV_FILE, "a", newline="") as f:
-            writer = csv.writer(f)
-            writer.writerow(row)
+        if CSV_FILE:
+            with open(CSV_FILE, "a", newline="") as f:
+                writer = csv.writer(f)
+                writer.writerow(row)
 
         time.sleep(TIMESTAMP_INTERVAL)
 
@@ -430,7 +535,6 @@ threading.Thread(target=timestamp_updater, daemon=True).start()
 # ------------------------------
 # SENSOR DATA RECEIVER 
 # ------------------------------
-
 @app.route("/sensor", methods=["POST"])
 def receive_sensor():
     data = request.get_json(force=True, silent=True) or {}
@@ -453,7 +557,6 @@ def receive_sensor():
 # ------------------------------
 # SENSOR DATA API 
 # ------------------------------
-
 @app.route("/data")
 def data():
     return jsonify({
@@ -461,6 +564,52 @@ def data():
         **sensor_data
     })
 
+# ------------------------------
+# START/STOP 
+# ------------------------------
+@app.route("/start_test", methods=["POST"])
+def start_test():
+
+    global test_running
+    global current_airflow
+    global CSV_FILE
+
+    data = request.get_json(force=True, silent=True) or {}
+
+    airflow = float(data.get("airflow"))
+
+    timestamp.clear()
+    for sid in SENSOR_IDS:
+        sensor_data[sid]["co2"].clear()
+        sensor_data[sid]["temp"].clear()
+
+    current_airflow = airflow
+    test_running = True
+
+    # Create NEW csv for each run
+    CSV_FILE = f"data/test_{datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.csv"
+
+    with open(CSV_FILE, "w", newline="") as f:
+        writer = csv.writer(f)
+
+        writer.writerow(["Airflow Rate", airflow])
+        writer.writerow(["Start Time", datetime.now()])
+        writer.writerow([])
+
+        headers = ["timestamp","co2_state","inlet_fan","outlet_fan","inlet_vent","outlet_vent"]
+
+        for sid in SENSOR_IDS:
+            headers += [f"{sid}_co2", f"{sid}_temp"]
+
+        writer.writerow(headers)
+
+    return jsonify(status="ok")
+
+@app.route("/stop_test", methods=["POST"])
+def stop_test():
+    global test_running
+    test_running = False
+    return jsonify(status="ok")
 
 # ------------------------------
 # MAIN
@@ -468,16 +617,20 @@ def data():
 
 if __name__ == "__main__":
     try:
-        bt_fan = serial.Serial(FAN_PORT, 115200)
-        print("Fan controller connected:", bt_fan.name)
+        #bt_fan = serial.Serial(FAN_PORT, 115200)
+        print("Fan controller connected:")
     except:
         print("Fan controller NOT connected")
-
     try:
-        bt_vent = serial.Serial(VENT_PORT, 115200)
-        print("Vent controller connected:", bt_vent.name)
+        #bt_vent = serial.Serial(VENT_PORT, 115200)
+        print("Vent controller connected:")
     except:
         print("Vent controller NOT connected")
+    try:
+        #bt_co2 = serial.Serial(CO2_PORT, 115200)
+        print("CO2 controller connected:")
+    except:
+        print("CO2 controller NOT connected")
 
     print("Starting WiFi server...")
     print("Make sure ESP32 sends to: http://192.168.137.1:5000/sensor")
