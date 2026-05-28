@@ -72,166 +72,523 @@ def index():
 
 <style>
 
+*{
+box-sizing:border-box;
+margin:0;
+padding:0;
+font-family:Arial,sans-serif;
+}
+
 body{
-font-family:Arial;
-display:flex;
-justify-content:center;
-align-items:flex-start;
-background:#f5f5f5;
-padding-top:20px;
+background:#f3f4f6;
+padding:12px;
+height:100vh;
+overflow:hidden;
 }
 
+/* MAIN PAGE LAYOUT */
 .page{
-width:100%;
-max-width:1100px;
-}
-
-.grid{
 display:grid;
-grid-template-columns:repeat(2,1fr);
-grid-gap:40px;
+
+grid-template-columns:470px 1fr;
+
+justify-content:center;
+
+gap:14px;
+
+height:calc(100vh - 24px);
+
+max-width:1750px;
+
+margin:auto;
+
+overflow:hidden;
 }
 
-.card{
-background:#fff;
-border-radius:12px;
-padding:25px;
-box-shadow:0 4px 8px rgba(0,0,0,0.1);
-text-align:center;
-}
-
-.slider-container{
+/* LEFT CONTROLS */
+.left-panel{
 display:flex;
-gap:12px;
-align-items:center;
-margin:15px 0;
+flex-direction:column;
+gap:10px;
+overflow:hidden;
+padding-right:2px;
 }
 
+/* RIGHT CHARTS */
+.right-panel{
+display:flex;
+flex-direction:column;
+
+gap:10px;
+
+width:900px;
+
+min-width:900px;
+
+overflow:hidden;
+}
+
+/* GENERAL CARD */
+.card{
+background:white;
+border-radius:12px;
+padding:12px;
+box-shadow:0 2px 8px rgba(0,0,0,0.08);
+flex-shrink:0;
+}
+
+.double-card-row{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+}
+
+.half-card{
+height:100%;
+}
+
+/* TITLE */
+.title{
+font-size:24px;
+font-weight:bold;
+line-height:1.05;
+}
+
+/* SECTION LABEL */
+.section-title{
+font-size:18px;
+font-weight:bold;
+margin-bottom:10px;
+}
+
+/* FAN/VENT GRID */
+.control-grid{
+display:grid;
+grid-template-columns:1fr 1fr;
+gap:10px;
+width:100%;
+}
+
+/* INDIVIDUAL CONTROL */
+.control-card{
+background:#fafafa;
+border-radius:10px;
+padding:10px;
+border:1px solid #e5e7eb;
+min-width:0;
+}
+
+.control-card h3{
+
+font-size:15px;
+
+margin-bottom:8px;
+
+white-space:nowrap;
+overflow:hidden;
+text-overflow:ellipsis;
+}
+
+/* SLIDER ROW */
+.slider-row{
+display:flex;
+align-items:center;
+gap:8px;
+margin-bottom:10px;
+}
+
+.slider-row input[type=range]{
+flex:1;
+min-width:0;
+}
+
+/* VALUES */
 .value{
-min-width:40px;
+min-width:52px;
+font-weight:bold;
+font-size:14px;
+text-align:right;
+}
+
+/* BUTTONS */
+button{
+border:none;
+padding:7px 10px;
+border-radius:8px;
+cursor:pointer;
+font-weight:bold;
+font-size:14px;
+transition:0.15s;
+}
+
+button:hover{
+opacity:0.92;
+}
+
+.apply-btn{
+background:#7c3aed;
+color:white;
+width:100%;
+}
+
+.green{
+background:#16a34a;
+color:white;
+}
+
+.red{
+background:#dc2626;
+color:white;
+}
+
+.gray{
+background:#d1d5db;
+}
+
+/* CHART CARDS */
+.chart-card{
+
+background:white;
+
+border-radius:12px;
+
+padding:14px;
+
+box-shadow:0 2px 8px rgba(0,0,0,0.08);
+
+height:280px;
+
+max-height:280px;
+
+display:flex;
+flex-direction:column;
+
+overflow:hidden;
+}
+
+/* CHART TITLES */
+.chart-card h3{
+margin-bottom:6px;
+font-size:16px;
+flex-shrink:0;
+}
+
+/* CHART AREA */
+.chart-container{
+
+position:relative;
+
+height:220px;
+
+width:100%;
+
+flex:1;
+
+min-height:0;
+}
+
+/* IMPORTANT */
+canvas{
+width:100% !important;
+height:100% !important;
+}
+
+/* STATUS GRID */
+.status-grid{
+display:grid;
+grid-template-columns:repeat(6,1fr);
+gap:6px;
+}
+
+.status-item{
+background:#fafafa;
+padding:6px;
+border-radius:10px;
+text-align:center;
+border:1px solid #e5e7eb;
+}
+
+.status-item h4{
+font-size:12px;
+margin-bottom:4px;
+color:#555;
+}
+
+.status-item p{
+font-size:14px;
 font-weight:bold;
 }
 
-.chart-card{
-margin-top:40px;
-background:#fff;
-padding:20px;
-border-radius:12px;
-box-shadow:0 4px 8px rgba(0,0,0,0.1);
+/* TEST BUTTONS */
+.test-buttons{
+display:flex;
+gap:8px;
+margin-top:10px;
 }
 
-canvas{
+/* AIRFLOW INPUT */
+.airflow-row{
+display:flex;
+align-items:center;
+gap:8px;
+}
+
+.airflow-row input{
+flex:1;
+padding:8px;
+border-radius:8px;
+border:1px solid #ccc;
+font-size:14px;
+min-width:0;
+}
+
+/* SMALL TEXT */
+.small-text{
+font-size:13px;
+margin-top:10px;
+color:#555;
+}
+
+/* SCROLLBAR */
+.left-panel::-webkit-scrollbar{
+width:6px;
+}
+
+.left-panel::-webkit-scrollbar-thumb{
+background:#d1d5db;
+border-radius:10px;
+}
+
+/* LAPTOP SCALING */
+@media (max-width:1400px){
+
+.page{
+grid-template-columns:430px 1fr;
+}
+
+.chart-card{
+height:300px;
 max-height:300px;
+}
+
+.chart-container{
+height:245px;
+}
+
+.title{
+font-size:22px;
+}
+
+}
+
+/* SMALLER LAPTOPS */
+@media (max-width:1200px){
+
+.page{
+grid-template-columns:380px 1fr;
+}
+
+.control-grid{
+grid-template-columns:1fr;
+}
+
+.status-grid{
+grid-template-columns:1fr 1fr;
+}
+
+.chart-card{
+height:270px;
+max-height:270px;
+}
+
+.chart-container{
+height:210px;
+}
+
 }
 
 </style>
 </head>
 
-
 <body>
 
 <div class="page">
 
-<h1>Airflow & CO₂ Control Panel</h1>
-
-<div class="grid">
+<!-- LEFT SIDE -->
+<div class="left-panel">
 
 <div class="card">
+<div class="title">Airflow & CO₂ Control</div>
+</div>
+
+<div class="card">
+
+<div class="section-title">Fan & Vent Controls</div>
+
+<div class="control-grid">
+
+<div class="control-card">
 <h3>Inlet Fan</h3>
 
-<div class="slider-container">
-<input type="range" min="0" max="100" id="inletFan" value="0">
+<div class="slider-row">
+<input type="range" min="0" max="100" id="inletFan">
 <span class="value" id="inletFanValue">0%</span>
 </div>
 
-<button onclick="setFan('inlet')">Apply</button>
+<button class="apply-btn" onclick="setFan('inlet')">
+Apply
+</button>
 </div>
 
-
-<div class="card">
+<div class="control-card">
 <h3>Outlet Fan</h3>
 
-<div class="slider-container">
-<input type="range" min="0" max="100" id="outletFan" value="0">
+<div class="slider-row">
+<input type="range" min="0" max="100" id="outletFan">
 <span class="value" id="outletFanValue">0%</span>
 </div>
 
-<button onclick="setFan('outlet')">Apply</button>
+<button class="apply-btn" onclick="setFan('outlet')">
+Apply
+</button>
 </div>
 
-
-<div class="card">
+<div class="control-card">
 <h3>Inlet Vent</h3>
 
-<div class="slider-container">
-<input type="range" min="0" max="70" id="inletVent" value="0">
-<span class="value" id="inletVentValue">0deg</span>
+<div class="slider-row">
+<input type="range" min="0" max="70" id="inletVent">
+<span class="value" id="inletVentValue">0°</span>
 </div>
 
-<button onclick="setVent('inlet')">Apply</button>
+<button class="apply-btn" onclick="setVent('inlet')">
+Apply
+</button>
 </div>
 
-
-<div class="card">
+<div class="control-card">
 <h3>Outlet Vent</h3>
 
-<div class="slider-container">
-<input type="range" min="0" max="70" id="outletVent" value="0">
-<span class="value" id="outletVentValue">0deg</span>
+<div class="slider-row">
+<input type="range" min="0" max="70" id="outletVent">
+<span class="value" id="outletVentValue">0°</span>
 </div>
 
-<button onclick="setVent('outlet')">Apply</button>
+<button class="apply-btn" onclick="setVent('outlet')">
+Apply
+</button>
+</div>
+
+</div>
+</div>
+
+<div class="double-card-row">
+
+<div class="card half-card">
+
+<div class="section-title">CO₂ Valve</div>
+
+<div class="test-buttons">
+<button class="green" onclick="setCO2(1)">ON</button>
+<button class="gray" onclick="setCO2(0)">OFF</button>
+</div>
+
+<p class="small-text" id="co2Status">
+Status: OFF
+</p>
+
+</div>
+
+<div class="card half-card">
+
+<div class="section-title">Test Control</div>
+
+<div class="airflow-row">
+<input type="number" id="airflowValue" step="0.1" placeholder="Airflow">
+<span>CFM</span>
+</div>
+
+<div class="test-buttons">
+<button class="green" onclick="startTest()">Start</button>
+<button class="red" onclick="stopTest()">Stop</button>
+</div>
+
+<p class="small-text" id="testStatus">
+Test: STOPPED
+</p>
+
 </div>
 
 </div>
 
 <div class="card">
-<h3>CO₂ Valve</h3>
 
-<button onclick="setCO2(1)">ON</button>
-<button onclick="setCO2(0)">OFF</button>
+<div class="section-title">System Status</div>
 
-<p id="co2Status">Status: OFF</p>
+<div class="status-grid">
+
+<div class="status-item">
+<h4>Inlet Fan</h4>
+<p id="statusInletFan">0%</p>
 </div>
 
-<div class="card">
-
-<h3>Test Control</h3>
-
-<div class="slider-container">
-<input type="number" id="airflowValue" step="0.1" placeholder="Enter airflow rate">
-<span class="value">CFM</span>
+<div class="status-item">
+<h4>Outlet Fan</h4>
+<p id="statusOutletFan">0%</p>
 </div>
 
-<button onclick="startTest()">Start Test</button>
-<button onclick="stopTest()">Stop Test</button>
+<div class="status-item">
+<h4>CO₂</h4>
+<p id="statusCO2">OFF</p>
+</div>
 
-<p id="testStatus">Test: STOPPED</p>
+<div class="status-item">
+<h4>Inlet Vent</h4>
+<p id="statusInletVent">0°</p>
+</div>
+
+<div class="status-item">
+<h4>Outlet Vent</h4>
+<p id="statusOutletVent">0°</p>
+</div>
+
+<div class="status-item">
+<h4>Airflow</h4>
+<p id="statusAirflow">--</p>
+</div>
 
 </div>
+
+</div>
+
+</div>
+
+<!-- RIGHT SIDE -->
+<div class="right-panel">
 
 <div class="chart-card">
-
 <h3>CO₂ vs Time</h3>
+
+<div class="chart-container">
 <canvas id="co2Chart"></canvas>
-
 </div>
-
+</div>
 
 <div class="chart-card">
-
 <h3>Temperature vs Time</h3>
+
+<div class="chart-container">
 <canvas id="tempChart"></canvas>
-
+</div>
 </div>
 
 </div>
-
-
+</div>
 
 <script>
 
-const SENSORS = ["sensor1","sensor2","sensor3","sensor4"];
+const SENSORS = ["Inlet Vent","Outlet Vent","Window Wall","Floor"];
+const SENSOR_KEYS = ["sensor1","sensor2","sensor3","sensor4"];
 const COLORS = ["red","green","blue","purple"];
 
 function initSlider(id,unit){
@@ -259,6 +616,10 @@ headers:{"Content-Type":"application/json"},
 body:JSON.stringify({fan:fan,speed:Number(speed)})
 })
 
+document.getElementById(
+fan === "inlet" ? "statusInletFan" : "statusOutletFan"
+).textContent = speed + "%"
+
 }
 
 
@@ -272,6 +633,10 @@ headers:{"Content-Type":"application/json"},
 body:JSON.stringify({vent:vent,angle:Number(angle)})
 })
 
+document.getElementById(
+vent === "inlet" ? "statusInletVent" : "statusOutletVent"
+).textContent = angle + "°"
+
 }
 
 function setCO2(state){
@@ -282,23 +647,27 @@ headers:{"Content-Type":"application/json"},
 body:JSON.stringify({state:state})
 })
 
+document.getElementById("statusCO2").textContent =
+state ? "ON" : "OFF"
+
 document.getElementById("co2Status").textContent =
 "Status: " + (state ? "ON" : "OFF")
 
 }
-
 
 initSlider("inletFan","%")
 initSlider("outletFan","%")
 initSlider("inletVent","deg")
 initSlider("outletVent","deg")
 
-
 function createDatasets() {
-    return SENSORS.map((s, i) => ({
-        label: s,
+    return SENSORS.map((label, i) => ({
+        label: label,
         data: [],
-        borderColor: COLORS[i % COLORS.length],
+        borderColor: COLORS[i],
+        borderWidth: 2,
+        pointRadius: 0,
+        tension: 0.25,
         fill: false
     }));
 }
@@ -313,7 +682,24 @@ datasets: createDatasets()
 },
 
 options:{
-animation:false
+responsive:true,
+maintainAspectRatio:false,
+animation:false,
+
+plugins:{
+legend:{
+position:"top"
+}
+},
+
+scales:{
+x:{
+ticks:{
+maxTicksLimit:10
+}
+}
+}
+
 }
 
 })
@@ -325,11 +711,28 @@ type:"line",
 
 data:{
 labels:[],
-datasets: createDatasets()
+datasets:createDatasets()
 },
 
 options:{
-animation:false
+responsive:true,
+maintainAspectRatio:false,
+animation:false,
+
+plugins:{
+legend:{
+position:"top"
+}
+},
+
+scales:{
+x:{
+ticks:{
+maxTicksLimit:10
+}
+}
+}
+
 }
 
 })
@@ -350,7 +753,7 @@ function updateGraphs() {
         co2Chart.data.labels = slicedTime;
         tempChart.data.labels = slicedTime;
 
-        SENSORS.forEach((s, j) => {
+        SENSOR_KEYS.forEach((s, j) => {
             co2Chart.data.datasets[j].data = data[s].co2.slice(start);
             tempChart.data.datasets[j].data = data[s].temp.slice(start);
         });
@@ -370,6 +773,8 @@ function startTest(){
         alert("Enter airflow value first")
         return
     }
+
+    document.getElementById("statusAirflow").textContent = airflow + " CFM"
 
     co2Chart.data.labels = []
     tempChart.data.labels = []
